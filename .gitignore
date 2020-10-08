@@ -51,3 +51,4 @@ CPU/simulation/modelsim/rtl_work/_info
 *.bak10
 *.bak1
 CPU/simulation/modelsim/msim_transcript
+*.flock
