@@ -1,0 +1,135 @@
+// Copyright (C) 1991-2013 Altera Corporation
+// Your use of Altera Corporation's design tools, logic functions 
+// and other software and tools, and its AMPP partner logic 
+// functions, and any output files from any of the foregoing 
+// (including device programming or simulation files), and any 
+// associated documentation or information are expressly subject 
+// to the terms and conditions of the Altera Program License 
+// Subscription Agreement, Altera MegaCore Function License 
+// Agreement, or other applicable license agreement, including, 
+// without limitation, that your use is for the sole purpose of 
+// programming logic devices manufactured by Altera and sold by 
+// Altera or its authorized distributors.  Please refer to the 
+// applicable agreement for further details.
+
+// *****************************************************************************
+// This file contains a Verilog test bench template that is freely editable to  
+// suit user's needs .Comments are provided in each section to help the user    
+// fill out necessary details.                                                  
+// *****************************************************************************
+// Generated on "10/05/2020 10:34:58"
+                                                                                
+// Verilog Test Bench template for design : data_path
+// 
+// Simulation tool : ModelSim-Altera (Verilog)
+// 
+
+`timescale 1 ps/ 1 ps
+`include "C:/Users/wetrwer/Desktop/FPGA/CPU/alu.v"
+module data_path_vlg_tst();
+// constants                                           
+// general purpose registers
+reg eachvec;
+// test vector input registers
+reg [2:0] alu_func;
+reg alu_in_sel;
+reg clk;
+reg en_in_reg_group;
+reg en_pc_pulse;
+reg [7:0] offset_addr;
+reg [1:0] pc_ctrl;
+reg [1:0] rd;
+reg [3:0] reg_en;
+reg [1:0] rs;
+reg rst;
+
+// wires                                               
+wire en_out;
+wire [15:0]  pc_out;
+
+// assign statements (if any)                          
+data_path i1 (
+// port map - connection between master ports and signals/registers   
+	.alu_func(alu_func),
+	.alu_in_sel(alu_in_sel),
+	.clk(clk),
+	.en_in_reg_group(en_in_reg_group),
+	.en_out(en_out),
+	.en_pc_pulse(en_pc_pulse),
+	.offset_addr(offset_addr),
+	.pc_ctrl(pc_ctrl),
+	.pc_out(pc_out),
+	.rd(rd),
+	.reg_en(reg_en),
+	.rs(rs),
+	.rst(rst)
+);
+initial                                                
+begin     
+	clk = 1'b1;
+	
+	// offset_addr，alu_func，alu_in_sel值都初始化为0
+	offset_addr = 8'b00000000;
+	alu_func = 3'b000;
+	alu_in_sel = 1'b0;
+	en_in_reg_group = 2'b0;
+	en_pc_pulse = 2'b0;
+	rd=2'b00;
+	reg_en=4'b0000;
+	rs=2'b00;
+	rst=1'b0;
+	#10 rst=1'b1;
+	// 设pc_ctrl为2'b01,目的是为了让pc_out在en_pc_pulse为1时加一
+	pc_ctrl = 2'b01;
+	
+	// 把reg[0]的值设为0f
+	#10 
+	en_in_reg_group=1'b1; 
+	offset_addr=8'h0f;
+	alu_in_sel=1'b0;
+		 
+	alu_func=3'b000;
+	reg_en=4'b0001;
+	
+	// 把reg[1]的值设为00  这里就是出问题的地方 因为FPGA是同时运行的 因此这里offset的值（00000000）并不能传递到r1里面 r1还是会被传递为（00001111） 改变后的offset (00000000)没有意义
+	#10 en_in_reg_group=1'b1;
+	
+	#30 
+	alu_func=3'b000;
+	offset_addr=8'h00;
+	reg_en=4'b0010;
+	
+	// 将r[0]中的值加上r[1]中的值并存入r[1]
+	#10 //把寄存器里面的值选择为 rd_q输出r0  rs_q输出r1
+	en_in_reg_group=1'b1;
+	rd=2'b00;
+	rs=2'b01;
+	
+	//alu_mux选择 alu_a = rd_q  alu_b = rs_q
+	alu_in_sel=1'b1;
+	
+	//相加得到r0 r1的和 存入r1
+	alu_func = `AaddBH;
+	reg_en=4'b0010;
+		 
+	#10 en_in_reg_group=1'b0;
+ 	
+	#30 
+	alu_func=3'b000;
+	reg_en=4'b0000;
+	
+	#1000 $stop;
+		
+end     
+	// 时钟信号
+always #5 clk=~clk;  
+
+// 参数en_pc_pulse信号
+always
+begin
+	#50 en_pc_pulse=~en_pc_pulse;
+	#10 en_pc_pulse=~en_pc_pulse;
+	    
+end
+                                                   
+endmodule
